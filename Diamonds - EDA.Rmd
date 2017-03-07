@@ -1,0 +1,386 @@
+---
+title: "Diamonds - EDA"
+author: "RavMin"
+date: "March 6, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Diamonds Dataset - Exploratory Data Analysis
+
+
+```{r diamonds}
+library(ggplot2)
+
+summary(diamonds)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+qplot(x= diamonds$price, data = diamonds, binwidth = 20)+
+  scale_x_continuous(limits = c(0, 20000), breaks = seq(0, 20000,1000))
+```
+
+### We can see that the price distribution is POSITIVELY SKEWED. Lets try to look closer on peak price data. 
+
+```{r}
+qplot(x= diamonds$price, data = subset(diamonds, !is.na(price)), 
+      binwidth = 25,
+      color = I('black'), fill = I('dark blue'))+
+  scale_x_continuous(limits = c(0,2000), breaks = seq(0,2000, 100))
+
+```
+
+### We can see that there are no diamonds in the price range below $300(obviously!)
+### But interestingly there are few diamonds in the price range $1450-1575 (approx range)
+
+```{r}
+qplot(x= diamonds$price, data = subset(diamonds, !is.na(price)), 
+      binwidth = 25, 
+      xlab = 'Price of Diamonds', 
+      ylab= 'Buyers in Sample Data',
+      color = I('black'), fill = I('dark blue'))+
+  scale_x_continuous(limits = c(300,1500), breaks = seq(300,1500, 100))
+```
+
+### Exploring and Faceting the PRICE of diamonds by its CUT
+
+```{r}
+
+qplot(x= diamonds$price, data = subset(diamonds, !is.na(price)),
+      binwidth = 25,
+      xlab = 'Price of Diamonds', 
+      ylab= 'Buyers in Sample Data',
+      color = I('brown'), fill = I('yellow'))+
+  scale_x_continuous(limits = c(0, 15000), breaks = seq(0, 15000,1000))+
+  facet_wrap(~cut, ncol = 2, scales = 'free_y')
+```
+
+###
+```{r}
+qplot(x= diamonds$price/diamonds$carat, data = subset(diamonds, !is.na(price)),
+      binwidth = .02,
+      xlab = 'Price per Carat', 
+      ylab= 'Buyers in Sample Data',
+      color = I('black'), fill = I('Gold'))+
+  facet_wrap(~cut, ncol = 2, scales = 'free_y')+
+  scale_x_log10()
+```
+
+# Summary of statistical values of Price of diamonds by CUT
+
+```{r}
+by(diamonds$price, diamonds$cut, summary)
+
+```
+
+# BOX PLOT for Price of diamonds by cut
+### The Cartesian coordinate system is the most familiar, and common, type of coordinate system. Setting limits on the coordinate system will zoom the plot (like you're looking at it with a magnifying glass), and will not change the underlying data like setting limits on a scale will.
+
+
+
+```{r}
+
+
+diamonds$price_per_carat<-as.integer(diamonds$price/diamonds$carat)
+
+qplot(x= cut, y = price_per_carat, data = subset(diamonds, !is.na(price)),
+      geom = 'boxplot',
+      fill= cut)
+
+
+qplot(x= cut, y = price_per_carat, data = subset(diamonds, !is.na(price)),
+      geom = 'boxplot',
+      fill= cut)+
+  coord_cartesian(ylim=c(0,6000))
+
+```
+
+### # BOX PLOT for Price of diamonds by clarity
+
+```{r}
+
+by(diamonds$price, diamonds$clarity, summary)
+
+qplot(x= clarity, y = price_per_carat, data = subset(diamonds, !is.na(price)),
+      geom = 'boxplot', fill= clarity)+
+  coord_cartesian(ylim=c(0,6000))
+
+
+
+```
+
+# BOX PLOT for Price of diamonds by Color
+
+```{r}
+by(diamonds$price, diamonds$color, summary)
+
+qplot(x= color, y = price_per_carat, data = subset(diamonds, !is.na(price)),
+      geom = 'boxplot', fill = color)+
+  coord_cartesian(ylim=c(0,8000))
+
+```
+
+### Checking the interquatile range for the boxplots
+
+```{r}
+IQR(subset(diamonds, color=='D')$price)
+IQR(subset(diamonds, color=='J')$price)
+
+
+```
+
+
+### Frequency Polygon for weight(carat) of diamonds
+```{r}
+qplot(x=carat, data = subset(diamonds, !is.na(price)), 
+      geom='freqpoly',
+      binwidth= 0.1)+
+  scale_x_continuous(limits = c(0,5), breaks = seq(0,5,0.2))+
+  scale_y_continuous(breaks = seq(0,10000,1000))
+
+```
+
+### Scatterplot Price vs x GGPLOT
+
+```{r}
+p1 <- ggplot(data = diamonds, aes(x = x, y = price))+
+  geom_point()
+
+p2 <- ggplot(data = diamonds, aes(x = y, y = price))+
+  geom_point()
+
+p3 <- ggplot(data = diamonds, aes(x = z, y = price))+
+  geom_point()
+
+library(gridExtra)
+grid.arrange(p1,p2,p3, ncol=1)
+
+```
+
+## Correlation price and x
+
+```{r}
+with(diamonds, cor.test(x, price, method = 'pearson'))
+with(diamonds, cor.test(y, price, method = 'pearson'))
+with(diamonds, cor.test(z, price, method = 'pearson'))
+
+```
+
+
+### Scatterplot price vs depth
+
+```{r}
+ggplot(data = diamonds, aes(x = depth, y = price))+
+  geom_point(alpha = 1/20)+
+  scale_x_continuous(limits = c(55,70), breaks = seq(55,70,2))
+
+with(diamonds, cor.test(price, depth, method = 'pearson'))
+
+```
+
+### Scatterplot Price vs Carat
+
+```{r}
+ggplot(data=subset(diamonds, !is.na(price)), aes(x=carat, y=price))+
+  geom_point(fill='blue', color='black', shape=21)+
+  scale_x_continuous(lim = c(0, quantile(diamonds$carat, probs = 0.99)))+
+  scale_y_continuous(lim = c(0, quantile(diamonds$price, probs= 0.99)))+
+  stat_smooth(method = 'lm', color = 'red')
+
+```
+
+### Calculating Volume of the diamonds, Scatterplot and Number of diamonds with volume == 0
+```{r}
+diamonds$volume <- diamonds$x * diamonds$y * diamonds$z
+summary(diamonds$volume)
+
+ggplot(data=diamonds, aes(volume, price))+
+  geom_point()
+
+library(plyr)
+count(diamonds$volume == 0)
+detach("package:plyr", unload=TRUE)
+
+```
+
+# Correlation price and volume
+
+```{r}
+sub_diamonds<- subset(diamonds, diamonds$volume > 0 & diamonds$volume < 1000)
+with(sub_diamonds, cor.test(volume, price, method = 'pearson'))
+
+
+
+```
+## Scatterplot Price vs Volume-subset
+```{r}
+ggplot(data = sub_diamonds, aes(x=volume, y = price))+
+  geom_point()+
+  scale_y_continuous(limits=c(0,20000))+
+  geom_smooth(method = 'lm', color = 'red', formula = y~x)
+
+```
+
+## DiamondsByClarity data frame
+
+```{r}
+library(dplyr)
+
+
+diamondsByClarity <- diamonds %>% group_by(clarity) %>%
+  summarise(mean_price = mean(price),median_price = median(price),
+            max_price = max(price),
+            min_price = min(price),
+            n= n())
+diamondsByClarity
+
+```
+
+## Bar Plots for diamonds by clarity and diamonds by color
+```{r}
+
+
+diamonds_by_clarity <- group_by(diamonds, clarity)
+diamonds_mp_by_clarity <- summarise(diamonds_by_clarity, mean_price = mean(price))
+
+diamonds_by_color <- group_by(diamonds, color)
+diamonds_mp_by_color <- summarise(diamonds_by_color, mean_price = mean(price))
+
+head(diamonds_by_clarity)
+head(diamonds_mp_by_clarity)
+head(diamonds_mp_by_color)
+
+p1 <- ggplot(data = diamonds_mp_by_clarity, aes(x= clarity, y= mean_price))+
+  geom_bar(stat = 'identity')
+p2 <- ggplot(data = diamonds_mp_by_color, aes(x= color, y= mean_price))+
+  geom_bar(stat = 'identity')
+
+grid.arrange(p1, p2, ncol=2)
+
+
+```
+
+```{r}
+library(ggplot2)
+library(GGally)
+library(scales)
+library(memisc)
+
+# sample 10,000 diamonds from the data set
+set.seed(20022012)
+diamond_samp <- diamonds[sample(1:length(diamonds$price), 10000), ]
+ggpairs(diamond_samp, 
+  lower = list(continuous = wrap("points", shape = I('.'))), 
+  upper = list(combo = wrap("box", outlier.shape = I('.'))))
+#ggsave(file = "ScatterMatrix-Diamonds.pdf")
+```
+
+
+### The Demand of Diamonds
+```{r}
+
+plot1 <- qplot(data = diamonds, x= price, binwidth = 100, fill = I('#099DD9')) + 
+  ggtitle('Price')
+
+plot2 <- qplot(data= diamonds, x= price, binwidth = 0.01, fill = I('#F79420')) +
+  scale_x_log10()+
+  ggtitle('Price (log10)')
+
+grid.arrange(plot1, plot2, ncol=1)
+
+```
+
+
+### Price vs. Carat and Clarity
+
+#If the distribution of a variable has a positive skew, taking a natural logarithm of the variable sometimes helps fitting the variable into a model. Log transformations make positively skewed distribution more normal. Also, when a change in the dependent variable is related with percentage change in an independent variable, or vice versa, the relationship is better modeled by taking the natural log of either or both of the variables.
+
+```{r}
+### Create a new function to transform the carat variable
+
+cuberoot_trans = function() trans_new('cuberoot', transform = function(x) x^(1/3),
+                                      inverse = function(x) x^3)
+```
+
+
+### Scatterplot Price vs. Carat and Clarity using Cube root transformation and Log transformation
+
+```{r}
+library(RColorBrewer)
+
+ggplot(aes(x = carat, y = price, color = clarity), data = diamonds) + 
+  geom_point(alpha = 0.5, size = 1, position = 'jitter') +
+  scale_color_brewer(type = 'div',
+    guide = guide_legend(title = 'Clarity', reverse = T,
+    override.aes = list(alpha = 1, size = 2))) +  
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+    breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(),limits = c(350, 15000),
+    breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat and Clarity')
+
+```
+
+### We can infer that the Price increases with increase in carat and with better Clarity and more importantly we can see that for the same value of carat, the price is higher for better clarity of diamonds
+
+
+### Price vs. Carat and Cut
+```{r Price vs. Carat and Cut}
+ggplot(aes(x = carat, y = price, color = cut), data = diamonds) + 
+  geom_point(alpha = 0.5, size = 1, position = 'jitter') +
+  scale_color_brewer(type = 'div',
+                     guide = guide_legend(title = 'Cut', reverse = T,
+                                          override.aes = list(alpha = 1, size = 2))) +  
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+                     breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+                     breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat and Cut')
+
+```
+
+### It looks like our Data has observations mostly for premium and Ideal cut, there are very less observations for the other cuts. So we cannot infer any relationship between cut and the price of diamonds
+
+### Price vs. Carat and Color
+
+```{r Price vs. Carat and Color}
+ggplot(aes(x = carat, y = price, color = color), data = diamonds) + 
+  geom_point(alpha = 0.5, size = 1, position = 'jitter') +
+  scale_color_brewer(type = 'div',
+                     guide = guide_legend(title = 'Color',                                           override.aes = list(alpha = 1, size = 2))) +  
+  scale_x_continuous(trans = cuberoot_trans(), limits = c(0.2, 3),
+                     breaks = c(0.2, 0.5, 1, 2, 3)) + 
+  scale_y_continuous(trans = log10_trans(), limits = c(350, 15000),
+                     breaks = c(350, 1000, 5000, 10000, 15000)) +
+  ggtitle('Price (log10) by Cube-Root of Carat and Color')
+```
+### The price of diamonds is higher for colors D and E as compared to the others. 
+
+### Building the Linear Model
+
+```{r Building the Linear Model}
+m1 <- lm(I(log(price)) ~ I(carat^(1/3)), data = diamonds)
+m2 <- update(m1, ~ . + carat)
+m3 <- update(m2, ~ . + cut)
+m4 <- update(m3, ~ . + color)
+m5 <- update(m4, ~ . + clarity)
+mtable(m1, m2, m3, m4, m5, sdigits = 3)
+```
+
+```{r}
+thisDiamond = data.frame(carat = 1.00, cut = "Very Good",
+                         color = "I", clarity="VS1")
+modelEstimate = predict(m5, newdata = thisDiamond,
+                        interval="prediction", level = .95)
+
+modelEstimate
+```
+
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
